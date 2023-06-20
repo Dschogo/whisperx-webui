@@ -15,7 +15,7 @@ dotenv.load_dotenv()
 
 def process(files, device, model, lang, allign, diarization, batch_size, output_format, progress=gr.Progress(track_tqdm=True)):
     progress(0, desc="Loading models...")
-    import whisperx
+    import whisperx_custom
 
     if files is None:
         raise gr.Error("Please upload a file to transcribe")
@@ -25,7 +25,7 @@ def process(files, device, model, lang, allign, diarization, batch_size, output_
 
     results = []
     tmp_results = []
-    whisper_model = whisperx.load_model(model, device=device)
+    whisper_model = whisperx_custom.load_model(model, device=device)
 
     for file in tqdm.tqdm(files, desc="Transcribing", position=0, leave=True):
         result = whisper_model.transcribe(file.name, batch_size=batch_size)
@@ -40,7 +40,7 @@ def process(files, device, model, lang, allign, diarization, batch_size, output_
         tmp_results = results
 
         results = []
-        align_model, align_metadata = whisperx.load_align_model(model_name="WAV2VEC2_ASR_LARGE_LV60K_960H" if lang == "en" else None, language_code=lang, device=device)
+        align_model, align_metadata = whisperx_custom.load_align_model(model_name="WAV2VEC2_ASR_LARGE_LV60K_960H" if lang == "en" else None, language_code=lang, device=device)
 
         for result, audio_path in tqdm.tqdm(tmp_results, desc="Alligning", position=0, leave=True):
             input_audio = audio_path
@@ -49,8 +49,8 @@ def process(files, device, model, lang, allign, diarization, batch_size, output_
                 if result.get('language') != align_metadata["language"]:
                     # load new model
                     print(f"Loading new model for {result['language']}")
-                    align_model, align_metadata = whisperx.load_align_model(result["language"], device=device)
-                result = whisperx.align(result["segments"], align_model, align_metadata, input_audio, device, return_char_alignments=False)
+                    align_model, align_metadata = whisperx_custom.load_align_model(result["language"], device=device)
+                result = whisperx_custom.align(result["segments"], align_model, align_metadata, input_audio, device, return_char_alignments=False)
             results.append((result, audio_path))
 
         del align_model
@@ -63,10 +63,10 @@ def process(files, device, model, lang, allign, diarization, batch_size, output_
         else:
             tmp_res = results
             results = []
-            diarize_model = whisperx.DiarizationPipeline(use_auth_token=os.getenv("hf_token"), device=device)
+            diarize_model = whisperx_custom.DiarizationPipeline(use_auth_token=os.getenv("hf_token"), device=device)
             for result, input_audio_path in tqdm.tqdm(tmp_res, desc="Diarizing", position=0, leave=True):
                 diarize_segments = diarize_model(input_audio_path, min_speakers=None, max_speakers=None)
-                result = whisperx.diarize.assign_word_speakers(diarize_segments, result)
+                result = whisperx_custom.diarize.assign_word_speakers(diarize_segments, result)
                 results.append((result, input_audio_path))
 
 
