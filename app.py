@@ -9,6 +9,7 @@ import os
 import dotenv
 import utils
 import json
+import pandas as pd
 
 dotenv.load_dotenv()
 
@@ -19,9 +20,6 @@ def process(files, device, model, lang, allign, diarization, batch_size, output_
 
     if files is None:
         raise gr.Error("Please upload a file to transcribe")
-
-    # if lang == "":
-    #     raise gr.Error("Please provide a language hint")
 
     results = []
     tmp_results = []
@@ -39,6 +37,9 @@ def process(files, device, model, lang, allign, diarization, batch_size, output_
     if allign:
         tmp_results = results
 
+        if lang == "":
+            lang = "en"
+
         results = []
         align_model, align_metadata = whisperx_custom.load_align_model(model_name="WAV2VEC2_ASR_LARGE_LV60K_960H" if lang == "en" else None, language_code=lang, device=device)
 
@@ -46,7 +47,7 @@ def process(files, device, model, lang, allign, diarization, batch_size, output_
             input_audio = audio_path
 
             if align_model is not None and len(result["segments"]) > 0:
-                if result.get('language') != align_metadata["language"]:
+                if result.get("language") != align_metadata["language"]:
                     # load new model
                     print(f"Loading new model for {result['language']}")
                     align_model, align_metadata = whisperx_custom.load_align_model(result["language"], device=device)
@@ -69,10 +70,9 @@ def process(files, device, model, lang, allign, diarization, batch_size, output_
                 result = whisperx_custom.diarize.assign_word_speakers(diarize_segments, result)
                 results.append((result, input_audio_path))
 
-
     writer_args = {"max_line_width": None, "max_line_count": None, "highlight_words": False}
     for res, audio_path in tqdm.tqdm(results, desc="Writing", position=0, leave=True):
-        slug = os.path.basename(audio_path).replace(os.path.basename(audio_path).split("_")[-1], "")
+        slug = os.path.basename(audio_path).replace(os.path.basename(audio_path).split("_")[-1], "")[:-1]
 
         if not os.path.exists(os.getcwd() + "/output/" + slug):
             os.mkdir(os.getcwd() + "/output/" + slug)
@@ -119,16 +119,30 @@ with gr.Blocks() as ui:
                 # output format
                 output_format = gr.Dropdown(label="Output Format", choices=["all", "json", "txt", "srt", "vtt", "tsv"], value="all")
 
-    with gr.Tab(label="History"):
-        # history
-        history = gr.Textbox(label="History")
+        # link to output folder in new tab
+        gr.Label(value="Output Folder: " + os.getcwd() + "\output")
+
+    # with gr.Tab(label="History"):
+    #     # chekc if output folder exists
+    #     if not os.path.exists(os.getcwd() + "/output"):
+    #         os.mkdir(os.getcwd() + "/output")
+
+    #     # list all files in output folder including extension
+    #     folders = os.listdir(os.getcwd() + "/output")
+
+    #     def fill_table():
+    #         # create table from array of files
+    #         df = pd.DataFrame(folders)
+    #         df.columns = ["File"]
+    #         df = df.transpose()
+    #         return df
+        
+    #     ui.load(fill_table)
+
+        # btn_refresh = gr.Button(value="Refresh")
+        # btn_refresh.click(fill_table)
 
     btn_run.click(process, inputs=[input_files, device, model, lang, allign, diarization, batch_size, output_format], outputs=[input_files])
 
 if __name__ == "__main__":
-
-    # chekc if output folder exists
-    if not os.path.exists(os.getcwd() + "/output"):
-        os.mkdir(os.getcwd() + "/output")
-
     ui.queue(concurrency_count=10).launch()
