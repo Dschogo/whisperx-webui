@@ -17,19 +17,17 @@ For example via a .env file:
     hf_token=your_token
 ```
 
-
 ## Features
 
 - Transcribe with whisperx - 70x realtime
 - Multiple files at once (single language per batch)
 - All cli options and output formats
-- easy to use, and view/ copy 
+- easy to use, and view/ copy
 
 ![image](https://github.com/Dschogo/whisperx-webui/assets/36862419/ff144328-51b6-45c1-a89a-ad4b63ea1699)
 
 ![image](https://github.com/Dschogo/whisperx-webui/assets/36862419/75442dee-a4fb-4151-a27c-9d0bcb87a25d)
 
-
 ## Todo
 
-- [ ] Rest of options available in cli
+- [ ] Bugs found by me or reported via issues
