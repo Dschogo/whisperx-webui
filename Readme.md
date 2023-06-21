@@ -17,6 +17,8 @@ For example via a .env file:
     hf_token=your_token
 ```
 
-## Todo
+![image](https://github.com/Dschogo/whisperx-webui/assets/36862419/ff34a317-95c3-4668-a83f-242c52d77fde)
 
-- [ ] rest of cli settings
+
+## Todo
+  - [ ] Rest of options available in cli
