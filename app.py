@@ -121,12 +121,13 @@ def process(
     writer_args = {"max_line_width": None if max_line_width == 0 else max_line_width, "max_line_count": None if max_line_count == 0 else max_line_count, "highlight_words": False}
 
     for res, audio_path in tqdm.tqdm(results, desc="Writing", position=0, leave=True, unit="files"):
-        slug = os.path.basename(audio_path).replace(os.path.basename(audio_path).split("_")[-1], "")[:-1]
 
-        if not os.path.exists(os.getcwd() + "/output/" + slug):
-            os.mkdir(os.getcwd() + "/output/" + slug)
+        filename_alpha_numeric = "".join([c for c in os.path.basename(audio_path) if c.isalpha() or c.isdigit() or c == " "]).rstrip()
 
-        writer = utils.get_writer(output_format, os.getcwd() + "/output/" + slug)
+        if not os.path.exists(os.getcwd() + "/output/" + filename_alpha_numeric):
+            os.mkdir(os.getcwd() + "/output/" + filename_alpha_numeric)
+
+        writer = utils.get_writer(output_format, os.getcwd() + "/output/" + filename_alpha_numeric)
         writer(res, audio_path, writer_args)
 
 
