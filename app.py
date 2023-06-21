@@ -71,6 +71,7 @@ def process(files, device, model, lang, allign, diarization, batch_size, output_
                 results.append((result, input_audio_path))
 
     writer_args = {"max_line_width": None, "max_line_count": None, "highlight_words": False}
+
     for res, audio_path in tqdm.tqdm(results, desc="Writing", position=0, leave=True):
         slug = os.path.basename(audio_path).replace(os.path.basename(audio_path).split("_")[-1], "")[:-1]
 
@@ -106,41 +107,57 @@ with gr.Blocks() as ui:
                         allign = gr.Checkbox(label="Allign Text", value=True)
                         diarization = gr.Checkbox(label="Speaker Diarization")
                         with gr.Row():
-                            min_speakers = gr.Number(label="Min Speakers", max_value=10, value=1, interactive=True)
-                            max_speakers = gr.Number(label="Max Speakers", max_value=10, value=1, interactive=True)
+                            min_speakers = gr.Number(label="Min Speakers", max_value=10, value=1, visible=False)
+                            max_speakers = gr.Number(label="Max Speakers", max_value=10, value=1, visible=False)
+                            # enable min and max speakers if diarization is enabled
+                            def change_interactive(min, max, val):
+                                return [
+                                    gr.Number.update(visible=val),
+                                    gr.Number.update(visible=val),
+                                ]
+                            diarization.change(fn=change_interactive, inputs=[min_speakers, max_speakers, diarization], outputs=[min_speakers, max_speakers])
 
                     with gr.Group():
                         # device add cuda to dropdown if available
                         device = gr.Dropdown(
-                            label="Device", choices=["cpu", "cuda"] if torch.cuda.is_available() else ["cpu"], value="cuda" if torch.cuda.is_available() else "cpu"
+                            label="Device", choices=["cpu", "gpu"] if torch.cuda.is_available() else ["cpu"], value="gpu" if torch.cuda.is_available() else "cpu"
                         )
                         batch_size = gr.Slider(label="Batch Size", min_value=1, maximum=100, step=1, value=8, interactive=True)
 
                 # output format
                 output_format = gr.Dropdown(label="Output Format", choices=["all", "json", "txt", "srt", "vtt", "tsv"], value="all")
 
-        # link to output folder in new tab
         gr.Label(value="Output Folder: " + os.getcwd() + "\output")
 
-    # with gr.Tab(label="History"):
-    #     # chekc if output folder exists
-    #     if not os.path.exists(os.getcwd() + "/output"):
-    #         os.mkdir(os.getcwd() + "/output")
+    with gr.Tab(label="History"):
 
-    #     # list all files in output folder including extension
-    #     folders = os.listdir(os.getcwd() + "/output")
+        def fill_dropdown():
+            folders = os.listdir(os.getcwd() + "/output")
+            return gr.Dropdown.update(choices=folders)
 
-    #     def fill_table():
-    #         # create table from array of files
-    #         df = pd.DataFrame(folders)
-    #         df.columns = ["File"]
-    #         df = df.transpose()
-    #         return df
-        
-    #     ui.load(fill_table)
+        history_dropdown = gr.Dropdown(label="Folder", choices=os.listdir(os.getcwd() + "/output"), interactive=True, value="")
+        btn_refresh = gr.Button(value="Refresh output list")
+        btn_refresh.click(fill_dropdown, inputs=None, outputs=history_dropdown)
 
-        # btn_refresh = gr.Button(value="Refresh")
-        # btn_refresh.click(fill_table)
+        def set_file_type(selected):
+            if selected == "":
+                return gr.Dropdown.update(choices=["select a file"])
+            files = [os.path.splitext(x)[1] for x in os.listdir(os.getcwd() + "/output/" + selected)]
+            return gr.Dropdown.update(choices=files, interactive=True)
+
+        file_type = gr.Dropdown(label="File Type", choices=[], value="select a file", interactive=False)
+        history_dropdown.change(set_file_type, inputs=history_dropdown, outputs=file_type)
+
+        def fill_output(folder, type):
+            if folder == "" or type == "select a file":
+                return gr.TextArea.update(value="")
+            file = [x for x in os.listdir(os.getcwd() + "/output/" + folder) if os.path.splitext(x)[1] == type][0]
+            with open(os.getcwd() + "/output/" + folder + "/" + file, "r", encoding="utf-8") as f:
+                text = f.read()
+            return gr.TextArea.update(value=text)
+
+        output_text_field = gr.TextArea(label="Output (changes made wont be saved - files are also in the output folder)", value="", interactive=True)
+        file_type.change(fill_output, inputs=[history_dropdown, file_type], outputs=output_text_field)
 
     btn_run.click(process, inputs=[input_files, device, model, lang, allign, diarization, batch_size, output_format], outputs=[input_files])
 
