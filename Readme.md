@@ -1,6 +1,6 @@
-![image](https://github.com/Dschogo/whisperx-webui/assets/36862419/1a81177c-1865-4b08-b11a-d0ae086eeedf)# WhisperX webui
+# Whisperx WebUI
 
-build with gradio and WhisperX
+Wouldn't be possible without [whisperx](https://github.com/m-bain/whisperX)
 
 ## Installation
 
