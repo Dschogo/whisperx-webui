@@ -31,3 +31,4 @@ For example via a .env file:
 ## Todo
 
 - [ ] Bugs found by me or reported via issues
+- [ ] installer bat file?

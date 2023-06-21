@@ -7,7 +7,7 @@ import time
 import torch
 import os
 import dotenv
-import utils
+from whisperx_custom import utils
 import json
 import pandas as pd
 
