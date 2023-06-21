@@ -62,6 +62,8 @@ def process(
 
     results = []
     tmp_results = []
+    gc.collect()
+    torch.cuda.empty_cache()
     whisper_model = whisperx_custom.load_model(
         model,
         device=device,
